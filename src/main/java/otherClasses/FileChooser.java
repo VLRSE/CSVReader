@@ -1,8 +1,8 @@
 package otherClasses;
 
-import java.awt.Container;
+import javax.swing.*;
+import java.awt.*;
 import java.io.File;
-import javax.swing.JFileChooser;
 
 /**
  *
@@ -15,6 +15,8 @@ public class FileChooser extends JFileChooser {
     //    private final JFileChooser jFileChooser;
     private File file;
     private final Container parent;
+    private float fileSize;
+    private String sizeType;
 
     public FileChooser(Container parent){
         // set the directory path to the current directory
@@ -38,6 +40,16 @@ public class FileChooser extends JFileChooser {
         if(returnVal == JFileChooser.APPROVE_OPTION){
             /*save the file selected when Upload button was clicked*/
             file = this.getSelectedFile();
+            fileSize = file.length();
+
+            if(fileSize >= 1024 && fileSize <(Math.pow(1024, 2))){
+                fileSize /= 1024;
+                sizeType = "KB";
+            }
+            else if(fileSize >= (Math.pow(1024, 2)) && fileSize <(Math.pow(1024, 3))){
+                fileSize /= Math.pow(1024, 2);
+                sizeType = "MB";
+            }
         }
     }
 
@@ -47,5 +59,14 @@ public class FileChooser extends JFileChooser {
 
     public int getReturnVal() {
         return returnVal;
+    }
+
+
+    public float getFileSize() {
+        return fileSize;
+    }
+
+    public String getSizeType() {
+        return sizeType;
     }
 }

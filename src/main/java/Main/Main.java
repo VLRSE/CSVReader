@@ -1,9 +1,9 @@
 package Main;
 
 import DarkThemeComponents.*;
-import otherClasses.*;
-
-
+import otherClasses.Artikel;
+import otherClasses.FileChooser;
+import otherClasses.ProgressTask;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -11,11 +11,13 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,7 +35,8 @@ public class Main {
     private static ImportPanel importPanel;
     private static ProgressBarPanel progressBarPanel;
     private static JButton btnImport, btnStart, btnClose, btnMax, btnMin, btnReduce;
-    private static Path path, filename;
+    private static Path path;
+    private static String filename;
     private static JLabel filenameLabel;
     private static final String CHAR_TO_REPLACE = "[[\\W] &&[^\\s]&& [^\\p{IsLatin}] && [^[%---'/] ]]";
     private static ProgressTask task;
@@ -43,12 +46,14 @@ public class Main {
     private static FileMenuBar menuBar;
     private static JMenu menu;
     private static JTabbedPane tabbedPane;
-    private static List<String> importedFiles;
+    private static List<Map<String, Path>> importedFiles;
+    private  static    Map<String, Path> filenameAndPath;
     private static String[] header;
     private static DefaultTableModel tableModel;
     private  static JTable table;
     private static final Color PRIMARY_COLOR = Color.decode("#42A5F5");
     private final Font BUTTON_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 12);
+
 
 
     public static void main(String[] args) {
@@ -78,13 +83,15 @@ public class Main {
 
     //create the GUI and show
     public static void createGUIAndShow() throws FileNotFoundException,  IOException{
-        frame = new DarkFrame("CSV Data Processing App");
+        frame = new DarkFrame("CSV File Data Reader");
         frame.setForeground(Color.white);
         //get the references to the main panels of the DarkFrame class
         centerPanel = frame.getCenterPanel();
         dashboard = frame.getDashboardPanel();
         dashboard.setLayout(new FlowLayout(FlowLayout.CENTER, 0,20));
         //add a menubar and JButton´s instances to the dashboard on the left side of the frame
+//        DashBoardMenu dashboardMenu = new DashBoardMenu();
+//        dashboard.add(dashboardMenu);
         addDashboardButtons();
 
         try {
@@ -94,7 +101,10 @@ public class Main {
         catch (IOException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
+
         frame.setVisible(true);
+        frame.setResizable(true);
+        frame.pack();
     }
 
     //create a JPanel instance that will hold the importPanel and the progressBarPanel
@@ -127,13 +137,14 @@ public class Main {
 
     //a method that creates DashBoardButton instances to be added to the dashboard(left panel) panel container of the frame
     public static void addDashboardButtons(){
-        DashBoardButton btnTable, btnChart;
+        DashBoardButton btnDatei, btnTable, btnChart;
         JPanel panel;
         GridBagConstraints c;
 
         menuBar = new FileMenuBar(dashboard);
         menu = menuBar.getMenu();
-
+        JMenuItem menuItem = new JMenuItem();
+        btnDatei = new DashBoardButton("Datei", dashboard);
         btnTable = new DashBoardButton("Tabelle", dashboard);
         btnChart = new DashBoardButton("Chart", dashboard);
 
@@ -175,6 +186,9 @@ public class Main {
         progressBar = progressBarPanel.getProgressBar();
         fileSizeText = progressBarPanel.getProgressSize();
         filenameLabel = progressBarPanel.getFilenameLabel();
+
+        importedFiles = new ArrayList<>();
+       filenameAndPath= new HashMap<>();
     }
 
     //a method that creates an ImportPanel,ProgressBarPanel and MyTabbedPane instances to and adds them to the centerPanel container
@@ -202,7 +216,15 @@ public class Main {
          */
         if(fileChooser.getReturnVal() == JFileChooser.APPROVE_OPTION){
             path = fileChooser.getFile().toPath();
-            filename = path.getFileName();
+            filename = path.getFileName().toString();
+
+            //add the filename and the path of the file to be imported
+            filenameAndPath.put(filename, path);
+
+            /*TODO: Check if map does not necessarily need to be added to a List object*/
+            //add the map object with filename and path to the importedFiles List
+            importedFiles.add(filenameAndPath);
+
             //change the text of filenameLabel
             filenameLabel.setText(filename.toString());
             //enable start button to import file
@@ -210,10 +232,8 @@ public class Main {
             btnStart.setEnabled(true);
             btnStart.addActionListener((ActionEvent e) -> {
                 try {
-                    //calculate file size and convert to either KB or MB, and show to GUI
-                    calculateFileSize(path.toFile());
                     //call method for this action
-                    btnStartActionPerformed();
+                    btnStartActionPerformed(fileChooser);
 
                 }
                 catch (IOException ex) {
@@ -228,26 +248,9 @@ public class Main {
         else if(fileChooser.getReturnVal() == JFileChooser.CANCEL_OPTION){
             resetComponents();
         }
+
     }
 
-    //a method that calculates the imported file´s size into KB or MB, and show it to a textArea on the GUI
-    public static void calculateFileSize( File file){
-        String sizeType = "";
-        // get the file´s size and convert to either KB or MB, and finally, set it as text to the fileSizeText text area
-        float size = file.length();
-
-        if(size >= 1024 && size <(Math.pow(1024, 2))){
-            size /= 1024;
-            sizeType = "KB";
-        }
-        else if(size >= (Math.pow(1024, 2)) && size <(Math.pow(1024, 3))){
-            size /= Math.pow(1024, 2);
-            sizeType = "MB";
-        }
-        //show file´s size and the progressBar update
-        String stringFormatted = String.format("%.02f", size );
-        fileSizeText.setText(""+stringFormatted  + sizeType+ " of " +stringFormatted +" " + sizeType);
-    }
 
     public static void resetComponents(){
         btnImport.setEnabled(true);
@@ -261,18 +264,23 @@ public class Main {
 
     }
 
-    public static void btnStartActionPerformed() throws IOException, ExecutionException, InterruptedException {
+    public static void btnStartActionPerformed(FileChooser fileChooser) throws IOException, ExecutionException, InterruptedException {
         String[] headers = new String[]{"Hauptartikelnr", "ArtikelName", "Hersteller"
                 , "Beschreibung", "Materialangaben", "Geschlecht", "Produktart", "Ärmel"
                 , "Bein", "Kragen", "Herstellung", "Taschenart", "Grammatur", "Material", "Ursprungsland", "Bildname"};
         frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
+        //get the size of the file to update the fileSizeText JTextArea object on progressbar panel
+        float size = fileChooser.getFileSize();
+        //show file´s size and the progressBar update
+        String stringFormatted = String.format("%.02f", size );
+        fileSizeText.setText(""+stringFormatted  + fileChooser.getSizeType()+ " of " +stringFormatted +" " + fileChooser.getSizeType());
+
         tableModel = new DefaultTableModel() ;
         JTable table = new JTable(tableModel);
-
-
-
         task = new ProgressTask(tableModel, path);
+
+
         tableModel.setColumnIdentifiers(header);
 
         JScrollPane scrollPane = new JScrollPane(table,
@@ -300,45 +308,29 @@ public class Main {
                 progressUpdate.setText(String.format(" %d%% fertig"  //update the progressUpdate text
                         , task.getProgress()));
 
-                if(progress == 100){
-                    System.out.println("progress " + progress);
-                    //reset the components that needed to be reset to ready for new file import
-
-                }
-
-
-
-
-
-
-                //get the reference of the otherClasses.Artikel from the task instance
-//                        aList = task.getArtikelList();
-                //create and display the table with the csv file records
-                String filename1 = path.getFileName().toString();
-                //save the header reference
-
-
-
-
 //                tabbedPane.addTab(filename, );
                 if(task.isDone()){
+                  //add a new Tab item with filename as the title and the table for the content
+                    addTabAndItem(filename, tableModel);
 
+                    try {
+                        aList = task.get();
 
-                    //add the scrollPane containing the table with updated tableModel
-                    tabbedPane.add("otherClasses.Artikel", scrollPane);
-                    //get the index of the newly added tab, subtracted by 1 because arrays index starts at 0
-                    int index = tabbedPane.getComponentCount()-1;
+//                        System.out.println(aList.get(1).toMap().get("Hauptartikelnr"));
+                        //create and display the table with the csv file records
+                        String filename1 = path.getFileName().toString();
+                        //reset the components at the start page to prepare for new import
+                        resetComponents();
 
-                    //set the newly added tab as the selected tab to display
-                    tabbedPane.setSelectedIndex(index);
-                    tabbedPane.setForegroundAt(index, Color.darkGray);
-                    tableModel.setColumnIdentifiers(headers);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    }
 
                 }
 
             }
-
-
 
         });
         //execute the background task to process the file and update the progressBar value
@@ -349,74 +341,50 @@ public class Main {
 //        createTable(tableModel, table);
         frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 
-
-
-
-
-        progressBar.setValue(100);
+        //add the headers String array as column identifiers to ready the table for data entries
         tableModel.setColumnIdentifiers(headers);
-        Object[] options = { "OK", "CANCEL" };
-
-
-
 
 
     }
 
-//    public static void addTabAndItem(String filename, DefaultTableModel tableModel, JTextArea area) {
-//        tabbedPane.addTab(filename, createTable( tableModel));
-//        JScrollPane scrollPane = new JScrollPane();
-//        scrollPane.setViewportView(area);
-//        tabbedPane.add(scrollPane);
-//        int position = tabbedPane.getComponentCount() - 1;
-//        tabbedPane.setSelectedIndex(position);
-//        tabbedPane.setForegroundAt(position, Color.darkGray);
-//        //add a menuItem to the menubar with the newly-imported file´s name
-//        addMenuItem(filename);
-//    }
+    public static void addTabAndItem(String filename, DefaultTableModel tableModel) {
+        tabbedPane.addTab(filename, createTable( tableModel));
+
+
+        int position = tabbedPane.getComponentCount() - 1;
+        tabbedPane.setSelectedIndex(position);
+        tabbedPane.setForegroundAt(position, Color.darkGray);
+        //add a menuItem to the menubar with the newly-imported file´s name
+        addMenuItem(filename);
+    }
 
     public static void addMenuItem(String title) {
         DarkMenuItem menuItem = new DarkMenuItem(title, tabbedPane);
         JMenuItem add = menu.add(menuItem);
     }
 
-    public static void createTable(DefaultTableModel tableModel) {
+    public static JScrollPane createTable(DefaultTableModel tableModel) {
 
-
-
-        JPanel panel;
         JScrollPane scrollPane;
         JTable table;
 
-
-
-
-
-        String[] s = {"gaaerawrwae", "aeraweraewr"};
-        tableModel.addRow(s);
-
         table = new JTable(tableModel);
-        panel = new JPanel(new BorderLayout());
         scrollPane = new JScrollPane(table,
                 JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
                 , JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
-        panel.setPreferredSize(new Dimension(500, 70));
-        table.setPreferredScrollableViewportSize(new Dimension(500, 70));
-//
+
+        table.setPreferredScrollableViewportSize(new Dimension(500, 70));//
         table.setFillsViewportHeight(true);
         scrollPane.setViewportView(table);
-
-        panel.add(scrollPane, BorderLayout.CENTER);
-
-
-        tabbedPane.addTab("hello", panel);
 
         tabbedPane.add(scrollPane);
         int position = tabbedPane.getComponentCount() - 1;
         tabbedPane.setSelectedIndex(position);
-        tabbedPane.setForegroundAt(position, Color.darkGray);
+//        tabbedPane.setForegroundAt(position, Color.darkGray);
         //add a menuItem to the menubar with the newly-imported file´s name
-        addMenuItem("hello");
+
+
+        return scrollPane;
     }
 }

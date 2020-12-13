@@ -30,14 +30,17 @@ public  class  DarkFrame extends JFrame implements ActionListener{
     
     public DarkFrame( String appName) throws IOException {
         super("CSV Data Processing App");
-        super.setForeground(Color.white);
+        this.setForeground(Color.white);
         applicatioName = appName;
-        createFrame();
-        pack();
+//        createFrame();
+
+
         
         //set Location at the center of the screen
-        super.setLocationRelativeTo(null);
-        super.setVisible(true);
+        this.setLocationRelativeTo(null);
+        setResizable(true);
+
+
     }
 
     public Container getPane() {
@@ -48,17 +51,19 @@ public  class  DarkFrame extends JFrame implements ActionListener{
     public void createFrame() throws IOException {
         // JFrame´s property set-up      
        
-        Dimension screenSize =  Toolkit.getDefaultToolkit().getScreenSize();
-        preferredSize = new Dimension((int)(screenSize.getWidth()*0.5),  (int)(screenSize.getHeight()*0.5));
-        setPreferredSize(preferredSize);
+//        Dimension screenSize =  Toolkit.getDefaultToolkit().getScreenSize();
+//        preferredSize = new Dimension((int)(screenSize.getWidth()*0.5),  (int)(screenSize.getHeight()*0.5));
+//        setPreferredSize(preferredSize);
+
 
         //set JFrame´s bounds to center of the screen
         
         pane.setBackground(DARKER_GRAY);
         setLayout(new BorderLayout(10,3));
         setUndecorated(true);
-        //Frame´s size is maximied upon running   
-        setResizable(true);
+
+
+
         
         /*add a mouse and mouseMotion listeners to the frame receive the mouse events on this frame*/
        FrameDragListener frameragListener = new FrameDragListener(this);
@@ -66,7 +71,7 @@ public  class  DarkFrame extends JFrame implements ActionListener{
        this.addMouseMotionListener(frameragListener);
        
        //add the 5 panels of the frame
-       addFrameComponents();
+//       addFrameComponents();
 
     }
     public void addFrameComponents() throws IOException {
@@ -77,15 +82,15 @@ public  class  DarkFrame extends JFrame implements ActionListener{
         topPanel.add(addBTNExitMinMaxPanel(),BorderLayout.LINE_END);
         
         //Add letfPanel on the frame
-        dashboard = addPanel(pane, pane.getWidth()/4,pane.getHeight(),new BorderLayout(),LIGHTER_GRAY,BorderLayout.WEST);
+        dashboard = addPanel(pane,new BorderLayout(),LIGHTER_GRAY,BorderLayout.WEST);
         
         
         //Add centerPanel to the frame
-        centerPanel = addPanel(pane,(pane.getWidth()),pane.getHeight(),new GridLayout(1,1),LIGHTER_GRAY,BorderLayout.CENTER);        
+        centerPanel = addPanel(pane,new GridLayout(1,1),LIGHTER_GRAY,BorderLayout.CENTER);
        
         //add the rightPanel to the right of the Frame by calling the addRightPanel method which returns a JPanel instance component
-        rightPanel =  addPanel(pane,10,pane.getHeight(), null,LIGHTER_GRAY,BorderLayout.EAST);
-        bottomPanel = addPanel(pane,pane.getWidth(),(int)(pane.getHeight()*0.25), new FlowLayout(),LIGHTER_GRAY, BorderLayout.PAGE_END);       
+        rightPanel =  addPanel(pane, null,LIGHTER_GRAY,BorderLayout.EAST);
+        bottomPanel = addPanel(pane, new FlowLayout(),LIGHTER_GRAY, BorderLayout.PAGE_END);
         //add the bottomPanel to the bottom of the Frame by calling the addBottomPanel method which returns a JPanel instance component
         pane.add(bottomPanel, BorderLayout.PAGE_END);
     }   
@@ -161,11 +166,11 @@ public  class  DarkFrame extends JFrame implements ActionListener{
     
     //a method that adds a JPanel instance that contains centerPanel components    
     
-    public JPanel addPanel(Container host,  int width, int height, LayoutManager layout, Color bgColor, String position){
+    public JPanel addPanel(Container host, LayoutManager layout, Color bgColor, String position){
         
         JPanel panel = new JPanel(layout);
         panel.setBackground(bgColor);
-        panel.setSize(width, height);   
+//        panel.setSize(width, height);
         panel.revalidate();
         panel.repaint();        
         panel.setVisible(true);  

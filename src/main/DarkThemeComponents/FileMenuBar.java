@@ -27,8 +27,8 @@ public class FileMenuBar extends JMenuBar implements ActionListener, ItemListene
         setMargin(new Insets(10,16,10,16));
         this.setAlignmentX(Component.CENTER_ALIGNMENT);
         //create the  menu for the files imported.
-        menu = new JMenu("Datei");
-        menu.setBackground(parent.getBackground());
+        menu = new JMenu();
+        menu.setBackground(Color.red);
         menu.setMargin(new Insets(10,16,10,16));
         menu.setForeground(Color.decode("#EEEEEE"));
         add(menu);
@@ -58,7 +58,7 @@ public class FileMenuBar extends JMenuBar implements ActionListener, ItemListene
 
     @Override
     public void itemStateChanged(ItemEvent e) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
     }
     
 }

@@ -38,8 +38,8 @@ public class ProgressTask extends SwingWorker< List<Artikel>, Artikel> {
         this.sourcePath =sourcePath;
         this.textArea = textArea;
          header = new String[]{"Hauptartikelnr", "ArtikelName", "Hersteller"
-                        , "Beschreibung", "Materialangaben", "Geschlecht", "Produktart", "Ärmel"
-                        , "Bein", "Kragen", "Herstellung", "Taschenart", "Grammatur", "Material", "Ursprungsland", "Bildname"};
+                 , "Beschreibung", "Materialangaben", "Geschlecht", "Produktart", "Ärmel"
+                 , "Bein", "Kragen", "Herstellung", "Taschenart", "Grammatur", "Material", "Ursprungsland", "Bildname"};
 
     }
 
@@ -50,7 +50,7 @@ public class ProgressTask extends SwingWorker< List<Artikel>, Artikel> {
         CSVParser parser;
         CSVFormat fmt = CSVFormat.EXCEL.withDelimiter(';');
         parser = CSVParser.parse(sourcePath.toFile(), Charset.forName("UTF-8")
-                , fmt.withHeader(header));
+                , fmt.withHeader(header).withIgnoreEmptyLines());
 
 
 
@@ -72,7 +72,7 @@ public class ProgressTask extends SwingWorker< List<Artikel>, Artikel> {
     long recordsToFind = artikelArray.size();
         for(Artikel input : artikelArray){
 //            System.out.println(input.toString());
-            Thread.sleep(50);
+            Thread.sleep(100);
 
 
             publish(input);
@@ -108,6 +108,7 @@ public class ProgressTask extends SwingWorker< List<Artikel>, Artikel> {
 
     @Override
     protected void done() {
+
         JOptionPane.showMessageDialog(null, "Datei wurde importiert", "Import erfolgreich", JOptionPane.INFORMATION_MESSAGE);
 
 
